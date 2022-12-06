@@ -3,22 +3,17 @@ import { Note } from "../entity/Note";
 
 export const notesController = Router();
 
-notesController.get("/", (req, res) => {
-  res.send("Hello world!");
-});
-
 // API BELOW NOT TESTED -> Can't test because no DB available
 
 // CREATE NOTE
-notesController.post("/", (req, res) => {
+notesController.post("/", async (req, res) => {
   try {
     const new_note = new Note();
-    new_note["owner"] = req.body.owner;
-    new_note["title"] = req.body.title;
-    new_note["body"] = req.body.body;
-    new_note["created_at"] = Date();
-    new_note["updated_at"] = Date();
-    new_note.save;
+    new_note.owner = req.body.owner;
+    new_note.title = req.body.title;
+    new_note.body = req.body.body;        
+    await new_note.save();
+
     res.send("CREATE SUCCESSFUL");
   } catch (e) {
     console.error(e);
@@ -27,11 +22,62 @@ notesController.post("/", (req, res) => {
 });
 
 // READ ALL NOTES
-notesController.get("/", (req, res) => {
+notesController.get("/", async (req, res) => {
   try {
-    res.send(Note.find());
+    res.send(await Note.find());
   } catch (e) {
     console.error(e);
     res.send("CREATE ERROR");
+  }
+});
+
+// GET BY ID
+notesController.get("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  
+  try {
+    const found_note = await Note.findOne({ where: { id } })    
+    if(found_note) return res.send(found_note);
+    res.sendStatus(404);
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(500);
+  }
+});
+
+// Update Note
+notesController.put("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);     
+  try {
+    const found_note = await Note.findOne({ where: { id } })   
+    if(found_note){
+      await Note.update(id,{
+        owner : req.body.owner,
+        title : req.body.title,
+        body : req.body.body,
+      }); 
+      return res.send("Update Note Successfully");
+    }
+    res.sendStatus(404);
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(500);
+  }
+});
+
+// DELETE NOTE BY ID
+notesController.delete("/:id", async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  try {    
+    const found_note = await Note.findOne({ where: { id } })      
+
+    if(found_note){
+      await Note.delete(id); 
+      return res.send("Delete Note Successfully");
+    }
+    res.sendStatus(404);
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(500);    
   }
 });
