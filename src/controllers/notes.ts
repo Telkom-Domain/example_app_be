@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { Note } from "../entity/Note";
+const {tokenProcess} = require("../middleware");
 
 export const notesController = Router();
 
 // API BELOW NOT TESTED -> Can't test because no DB available
 
 // CREATE NOTE
-notesController.post("/", async (req, res) => {
+notesController.post("/", [tokenProcess.verifyScope("write:notes")], async (req, res) => {
   try {
     const new_note = new Note();
     new_note.owner = req.body.owner;
@@ -22,7 +23,7 @@ notesController.post("/", async (req, res) => {
 });
 
 // READ ALL NOTES
-notesController.get("/", async (req, res) => {
+notesController.get("/", [tokenProcess.verifyScope("read:notes")], async (req, res) => {
   try {
     res.send(await Note.find());
   } catch (e) {
@@ -32,7 +33,7 @@ notesController.get("/", async (req, res) => {
 });
 
 // GET BY ID
-notesController.get("/:id", async (req, res) => {
+notesController.get("/:id", [tokenProcess.verifyScope("read:notes")], async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   
   try {
@@ -46,7 +47,7 @@ notesController.get("/:id", async (req, res) => {
 });
 
 // Update Note
-notesController.put("/:id", async (req, res) => {
+notesController.put("/:id", [tokenProcess.verifyScope("update:notes")], async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);     
   try {
     const found_note = await Note.findOne({ where: { id } })   
@@ -66,7 +67,7 @@ notesController.put("/:id", async (req, res) => {
 });
 
 // DELETE NOTE BY ID
-notesController.delete("/:id", async (req, res) => {
+notesController.delete("/:id", [tokenProcess.verifyScope("delete:notes")], async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   try {    
     const found_note = await Note.findOne({ where: { id } })      
