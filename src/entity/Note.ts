@@ -1,18 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm"
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from "typeorm";
 
 @Entity()
 export class Note extends BaseEntity {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column({
-    unique: true
+    unique: true,
   })
-  owner: string
+  owner: string;
 
-  @Column("string")
-  title: string
+  @Column()
+  title: string;
 
-  @Column("string")
-  body: String
+  @Column()
+  body: String;
 }
