@@ -1,17 +1,14 @@
-const parseJwt = token => {
-    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-}
-const verifyScope = scope => {
-    return (req, res, next) => {
-        let access_token = req.headers["domain-access-token"];
-        let scopes = ((parseJwt(access_token).scopes).toString()).split(' ');        
-        scopes.includes(scope) ? next() : res.status(403).send({ message: "Permission denied"});
-    }
-};
+import jwt from "jsonwebtoken";
 
-const tokenProcess = {
-    verifyScope: verifyScope,
-    parseJwt: parseJwt
-};
+export const verifyScope = (scope) => {
+  return (req, res, next) => {
+    let access_token = req.get("Authorization").split(" ")[1];
+    let scopes = jwt
+      .verify(access_token, process.env.CLIENT_SECRET)
+      ["scopes"].split(" ");
 
-module.exports = tokenProcess;
+    scopes.includes(scope)
+      ? next()
+      : res.status(403).send({ message: "Permission denied" });
+  };
+};
