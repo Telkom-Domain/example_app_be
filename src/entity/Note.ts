@@ -5,9 +5,7 @@ export class Note extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({
-    unique: true,
-  })
+  @Column()
   owner: string;
 
   @Column()
