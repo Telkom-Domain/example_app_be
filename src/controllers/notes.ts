@@ -1,87 +1,99 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import { Note } from "../entity/Note";
-import { verifyScope } from "../middlewares/tokenProcess";
+import { useAuth, verifyScope } from "../middlewares/tokenProcess";
 
 export const notesController = Router();
 
-notesController.get(
-  "/protected",
-  verifyScope("read:notes"),
-  async (req, res) => {
-    res.send("cool cool fosho");
-  }
-);
+notesController.post("/", useAuth(), verifyScope("write:notes"), createNoteHandler);
+notesController.get("/", useAuth(), verifyScope("read:notes"), getNoteHandler);
+notesController.get("/:id", useAuth(), verifyScope("read:notes"), getNotesHandler);
+notesController.put("/:id", useAuth(), verifyScope("update:notes"), updateNoteHandler);
+notesController.delete("/:id", useAuth(), verifyScope("delete:notes"), deleteNoteHandler);
 
-notesController.post("/", async (req, res) => {
-  const { owner, title, body } = req.body;
+async function createNoteHandler(req: Request, res: Response) {
+  if (!req.user?.id) {
+    return res.status(403).send({ message: "Permission denied" });
+  }
 
   try {
-    const new_note = new Note();
-    new_note.owner = req.body.owner;
-    new_note.title = req.body.title;
-    new_note.body = req.body.body;
-    await new_note.save();
+    const newNote = new Note();
+    newNote.owner = req.user.id;
+    newNote.title = req.body.title;
+    newNote.body = req.body.body;
+    await newNote.save();
 
-    res.send(new_note);
+    res.status(201).send(newNote);
   } catch (e) {
     console.error(e);
-    res.send("CREATE ERROR");
+    res.status(500).send({ message: "Internal server error" });
   }
-});
+}
 
-notesController.get("/", async (req, res) => {
+async function getNoteHandler(req: Request, res: Response) {
+  const userId = req.user?.id;
+
   try {
-    res.send(await Note.find());
+    res.send(await Note.find({ where: { owner: userId } }));
   } catch (e) {
     console.error(e);
-    res.send("CREATE ERROR");
+    res.status(500).send({ message: "Internal server error" });
   }
-});
+}
 
-notesController.get("/:id", async (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
+async function getNotesHandler(req: Request, res: Response) {
+  const noteId = Number.parseInt(req.params.id, 10);
+  const userId = req.user?.id;
 
   try {
-    const found_note = await Note.findOne({ where: { id } });
-    if (found_note) return res.send(found_note);
+    const foundNote = await Note.findOne({ where: { id: noteId, owner: userId } });
+
+    if (foundNote) return res.send(foundNote);
+
     res.sendStatus(404);
   } catch (e) {
     console.error(e);
-    res.sendStatus(500);
+    res.status(500).send({ message: "Internal server error" });
   }
-});
+}
 
-notesController.put("/:id", async (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
+async function updateNoteHandler(req: Request, res: Response) {
+  const noteId = Number.parseInt(req.params.id, 10);
+  const userId = req.user?.id;
+
   try {
-    const found_note = await Note.findOne({ where: { id } });
-    if (found_note) {
-      await Note.update(id, {
-        owner: req.body.owner,
-        title: req.body.title,
-        body: req.body.body,
-      });
-      return res.send("Update Note Successfully");
+    const foundNote = await Note.findOne({ where: { id: noteId, owner: userId } });
+
+    if (foundNote) {
+      foundNote.title = req.body.title;
+      foundNote.body = req.body.body;
+      await foundNote.save();
+
+      return res.status(200).send({ message: "Update successful" });
     }
+
     res.sendStatus(404);
   } catch (e) {
     console.error(e);
-    res.sendStatus(500);
+    res.status(500).send({ message: "Internal server error" });
   }
-});
+}
 
-notesController.delete("/:id", async (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
+async function deleteNoteHandler(req: Request, res: Response) {
+  const noteId = Number.parseInt(req.params.id, 10);
+  const userId = req.user?.id;
+
   try {
-    const found_note = await Note.findOne({ where: { id } });
+    const foundNote = await Note.findOne({ where: { id: noteId, owner: userId } });
 
-    if (found_note) {
-      await Note.delete(id);
-      return res.send("Delete Note Successfully");
+    if (foundNote) {
+      await foundNote.remove();
+
+      return res.sendStatus(204);
     }
+
     res.sendStatus(404);
   } catch (e) {
     console.error(e);
-    res.sendStatus(500);
+    res.status(500).send({ message: "Internal server error" });
   }
-});
+}
