@@ -4,10 +4,10 @@ import { Note } from "./entity/Note";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: "localhost",
+  host: "host.docker.internal",
   port: 5432,
   username: "postgres",
-  password: "",
+  password: "postgres",
   database: "alpinemd_ts",
   synchronize: true,
   logging: false,

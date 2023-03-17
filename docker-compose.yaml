@@ -1,0 +1,25 @@
+version: "0.1"
+services:
+  backend:
+    container_name: "domain_example_be"
+    image: "domain_example_be"
+    build:
+      target: base
+      context: .
+      dockerfile: "Dockerfile"
+      cache_from: 
+        - node:latest
+    networks:
+      - domain_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tty: true
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
+
+networks:
+  domain_network:
+    name: domain_example
+    driver: bridge
